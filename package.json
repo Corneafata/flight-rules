@@ -1,0 +1,12 @@
+{
+  "name": "flight-rules",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Flight Rules — NASA Space Apps 2026, Build a Junior Astronaut Mission Trainer",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "serve": "python3 -m http.server 8080"
+  }
+}

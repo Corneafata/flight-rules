@@ -1,0 +1,1606 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flight Rules</title>
+<meta name="description" content="Write flight rules for a Moon outpost, then fly them through the real 2023 lunar night at Chandrayaan-3's landing site.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a procedures binder on a mission console — one column of steps, the real record running as a timeline strip. */
+:root {
+  --paper: #eceff0;
+  --card: #fbfcfc;
+  --ink: #16202a;
+  --muted: #56636f;
+  --line: #c6cfd4;
+  --accent: #2147c4;
+  --accent-ink: #ffffff;
+  --night: rgba(30, 40, 56, 0.13);
+  --storm: rgba(194, 84, 12, 0.16);
+  --good: #1e7449;
+  --warn: #9a5c00;
+  --crit: #b0302a;
+  --sun: #c27a00;
+  --font-display: 'Barlow Condensed', 'Arial Narrow', 'Roboto Condensed', sans-serif;
+  --font-body: 'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+  --r: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1419; --card: #171e26; --ink: #e3e8ed; --muted: #95a3b0; --line: #2c3743;
+    --accent: #8fa9ff; --accent-ink: #0f1419; --night: rgba(140, 160, 200, 0.12); --storm: rgba(240, 130, 60, 0.18);
+    --good: #5cc48f; --warn: #e3a447; --crit: #ff7b72; --sun: #f0b44c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1419; --card: #171e26; --ink: #e3e8ed; --muted: #95a3b0; --line: #2c3743;
+  --accent: #8fa9ff; --accent-ink: #0f1419; --night: rgba(140, 160, 200, 0.12); --storm: rgba(240, 130, 60, 0.18);
+  --good: #5cc48f; --warn: #e3a447; --crit: #ff7b72; --sun: #f0b44c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--font-body); font-size: 17px; line-height: 1.5; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-inline: 20px; padding-block: 0 48px; }
+h1, h2, h3 { font-family: var(--font-display); font-weight: 700; line-height: 1.05; text-wrap: balance; margin: 0; letter-spacing: 0.005em; }
+h1 { font-size: clamp(2.6rem, 6vw, 4.4rem); text-transform: uppercase; }
+h2 { font-size: clamp(1.8rem, 3.6vw, 2.5rem); text-transform: uppercase; }
+h3 { font-size: 1.25rem; text-transform: uppercase; letter-spacing: 0.04em; }
+p { margin: 0; }
+a { color: var(--accent); }
+.eyebrow { font-family: var(--font-data); font-size: 0.75rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.small { font-size: 0.9rem; color: var(--muted); }
+button, select, input { font: inherit; color: inherit; }
+button { cursor: pointer; border-radius: var(--r); border: 1px solid transparent; padding: 10px 16px; }
+button:disabled { cursor: not-allowed; opacity: 0.45; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.primary { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.secondary { background: var(--card); border-color: var(--line); }
+.ghostbtn { background: transparent; border-color: var(--line); }
+.icon { background: transparent; border-color: var(--line); padding: 4px 10px; font-family: var(--font-data); }
+
+/* top bar */
+.topbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; background: var(--paper); border-bottom: 1px solid var(--line); }
+.topbar .wrap { display: flex; align-items: center; gap: 16px; padding-block: 10px; flex-wrap: wrap; }
+#brand { background: none; border: 0; padding: 0; font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; display: flex; align-items: center; gap: 10px; }
+#brand .mark { width: 22px; height: 22px; border: 2px solid var(--ink); border-radius: 50%; position: relative; overflow: hidden; }
+#brand .mark::after { content: ''; position: absolute; inset: 0 0 0 50%; background: var(--ink); }
+#steps { display: flex; gap: 4px; flex-wrap: wrap; flex: 1; }
+.step { background: transparent; border: 0; padding: 6px 10px; display: flex; gap: 8px; align-items: center; color: var(--muted); }
+.step .n { font-family: var(--font-data); font-size: 0.75rem; border: 1px solid currentColor; border-radius: 50%; width: 22px; height: 22px; display: inline-grid; place-items: center; }
+.step.on { color: var(--ink); font-weight: 700; }
+.step.on .n { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+#srcbtn { background: transparent; border: 1px solid var(--line); padding: 6px 12px; font-size: 0.9rem; }
+
+main { padding-top: 28px; display: block; }
+section { display: grid; gap: 24px; }
+.screenhead { display: grid; gap: 10px; max-width: 70ch; }
+.next { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-end; padding-top: 4px; }
+
+/* intro */
+.intro { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); align-items: start; gap: 40px; }
+.introtext { display: grid; gap: 20px; padding-top: 12px; }
+.lede { font-size: 1.15rem; max-width: 52ch; }
+.cta { display: flex; gap: 12px; flex-wrap: wrap; }
+.missioncard { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; display: grid; gap: 12px; }
+.sitename { color: var(--muted); }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; margin: 0; }
+.facts dt { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.facts dd { margin: 0; font-variant-numeric: tabular-nums; }
+
+/* chart */
+.chartwrap { overflow-x: auto; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 4px 2px; }
+.chart { width: 100%; min-width: 560px; height: auto; display: block; }
+.chart .nightband { fill: var(--night); }
+.chart .stormband { fill: var(--storm); }
+.chart .nightlabel { fill: var(--muted); font-family: var(--font-data); font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+.chart .horizon { stroke: var(--muted); stroke-width: 1; stroke-dasharray: 2 4; }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .sunline { fill: none; stroke: var(--sun); stroke-width: 2.5; }
+.chart .battline { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; }
+.chart .prevline { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.chart .lostline { stroke: var(--crit); stroke-width: 2; }
+.chart .playhead { stroke: var(--ink); stroke-width: 1.5; }
+.chart .tick { fill: var(--muted); font-family: var(--font-data); font-size: 12px; }
+.chart .tick.storm { fill: var(--warn); }
+.chart .tick.lost { fill: var(--crit); font-weight: 500; }
+.chart .axislabel { fill: var(--ink); font-family: var(--font-data); font-size: 12px; }
+.chart .ghost path { fill: var(--ink); }
+
+/* tags */
+.tag { display: inline-block; font-family: var(--font-data); font-size: 0.68rem; letter-spacing: 0.06em; padding: 1px 6px; border-radius: 3px; border: 1px solid currentColor; vertical-align: middle; white-space: nowrap; }
+.tag.published, .tag.observed { color: var(--good); }
+.tag.derived { color: var(--accent); }
+.tag.game-estimate { color: var(--warn); }
+.tag.simulated { color: var(--muted); }
+
+/* build */
+.massbar { position: relative; height: 44px; border: 1px solid var(--line); border-radius: var(--r); background: var(--card); overflow: hidden; }
+.massbar .fill { position: absolute; inset: 0 auto 0 0; background: var(--accent); opacity: 0.22; transition: width 0.15s; }
+.massbar.over .fill { background: var(--crit); opacity: 0.35; }
+.masstext { position: relative; display: flex; height: 100%; align-items: center; padding-inline: 14px; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.sliders { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 14px; }
+.slider { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; }
+.slider label { display: flex; gap: 8px; align-items: center; font-weight: 700; }
+.slider .sval { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.slider input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent); }
+.slider .shelp { grid-column: 1 / -1; font-size: 0.88rem; color: var(--muted); display: flex; justify-content: space-between; gap: 12px; }
+.slider .kg { font-family: var(--font-data); white-space: nowrap; color: var(--ink); }
+
+/* rules binder */
+.binder { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 0 0 16px; position: relative; }
+.binderhead { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--font-data); font-size: 0.75rem; letter-spacing: 0.14em; padding: 12px 18px; border-bottom: 2px solid var(--ink); }
+.rulelist { list-style: none; margin: 0; padding: 0 18px; display: grid; }
+.rulecard { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 14px; align-items: center; padding: 14px 0; border-bottom: 1px dashed var(--line); }
+.rnum { font-family: var(--font-display); font-size: 1.6rem; color: var(--accent); min-width: 2ch; }
+.rbody { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.kw { font-family: var(--font-data); font-weight: 500; font-size: 0.85rem; letter-spacing: 0.1em; }
+.rbody select, .rbody input { background: var(--paper); border: 1px solid var(--line); border-radius: var(--r); padding: 6px 8px; max-width: 100%; }
+.valwrap { display: inline-flex; gap: 6px; align-items: center; }
+.valwrap input { width: 5.5em; font-family: var(--font-data); }
+.unit { color: var(--muted); }
+.rtools { display: flex; gap: 6px; }
+.empty { padding: 18px; color: var(--muted); }
+.addrow { padding: 14px 18px 0; }
+.hints { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.hints .eyebrow { width: 100%; }
+.hint { background: transparent; border: 1px dashed var(--accent); color: var(--accent); text-align: left; }
+.errors { color: var(--crit); margin: 0; }
+
+/* fly */
+.flyhead { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; }
+.flyhead h2 { font-variant-numeric: tabular-nums; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.controls select { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 8px; }
+.flygrid { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.gauges { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.gauge { background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--good); border-radius: var(--r); padding: 10px 12px; display: grid; gap: 4px; }
+.gauge.warn { border-left-color: var(--warn); }
+.gauge.crit { border-left-color: var(--crit); }
+.glabel { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.gval { font-variant-numeric: tabular-nums; }
+.gval b { font-family: var(--font-display); font-size: 1.7rem; }
+.gbar { height: 5px; background: var(--paper); border-radius: 3px; overflow: hidden; }
+.gbar span { display: block; height: 100%; background: currentColor; color: var(--good); }
+.gauge.warn .gbar span { color: var(--warn); }
+.gauge.crit .gbar span { color: var(--crit); }
+.gnote { font-size: 0.78rem; color: var(--muted); }
+.side { display: grid; gap: 10px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; }
+.minirules { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 0.92rem; }
+.minirules li { display: grid; grid-template-columns: auto 1fr; gap: 8px; padding: 6px 8px; border-radius: 4px; transition: background 0.2s, color 0.2s; }
+.minirules .rnum { font-size: 1.1rem; }
+.minirules li.fired { background: var(--accent); color: var(--accent-ink); }
+.minirules li.fired .rnum { color: var(--accent-ink); }
+.systems { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sys { display: flex; justify-content: space-between; gap: 8px; font-size: 0.85rem; padding: 4px 8px; border: 1px solid var(--line); border-radius: 4px; }
+.sys b { font-family: var(--font-data); font-weight: 500; }
+.sys.changed { border-color: var(--accent); }
+.logwrap { display: grid; gap: 10px; }
+.log { list-style: none; margin: 0; padding: 0; max-height: 280px; overflow-y: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--card); }
+.ev { display: grid; grid-template-columns: 11.5em minmax(0, 1fr) auto; gap: 12px; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 0.92rem; align-items: baseline; }
+.ev time { font-family: var(--font-data); font-size: 0.8rem; color: var(--muted); }
+.ev .src { font-family: var(--font-data); font-size: 0.68rem; letter-spacing: 0.08em; color: var(--muted); }
+.ev.rule span:nth-child(2) { color: var(--accent); }
+.ev.lost, .ev.blackout { color: var(--crit); font-weight: 700; }
+.ev.storm, .ev.dose { color: var(--warn); }
+
+/* debrief */
+.verdict.survived h2 { color: var(--good); }
+.verdict.lost h2 { color: var(--crit); }
+.dominos { display: grid; gap: 10px; }
+.chain { margin: 0; padding-left: 1.4em; display: grid; gap: 8px; font-size: 1.08rem; max-width: 72ch; }
+.chain li:last-child { font-weight: 700; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 10px; }
+.stat { display: grid; gap: 2px; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r); background: var(--card); }
+.stat b { font-family: var(--font-display); font-size: 1.8rem; font-variant-numeric: tabular-nums; }
+.ghostnote { border-left: 3px solid var(--ink); padding: 4px 0 4px 16px; display: grid; gap: 6px; max-width: 72ch; }
+.share { display: grid; gap: 8px; max-width: 640px; }
+.coderow { display: flex; gap: 8px; }
+.coderow input { flex: 1; min-width: 0; font-family: var(--font-data); font-size: 0.85rem; background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 8px 10px; }
+
+/* sources */
+.legend { display: grid; gap: 6px; }
+.srclist { margin: 0; padding-left: 1.2em; display: grid; gap: 10px; }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r); background: var(--card); }
+table { border-collapse: collapse; width: 100%; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--font-data); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--font-data); white-space: nowrap; font-variant-numeric: tabular-nums; }
+td:first-child { font-family: var(--font-data); font-size: 0.8rem; }
+
+footer { border-top: 1px solid var(--line); margin-top: 40px; padding-top: 16px; font-size: 0.85rem; color: var(--muted); display: grid; gap: 4px; }
+
+@media (max-width: 820px) {
+  .topbar .wrap { gap: 8px 12px; }
+  #steps { order: 3; flex: 1 1 100%; flex-wrap: nowrap; overflow-x: auto; }
+  .step { white-space: nowrap; padding: 4px 6px; }
+  #srcbtn { margin-left: auto; }
+  .intro, .flygrid { grid-template-columns: minmax(0, 1fr); }
+  .rulecard { grid-template-columns: auto minmax(0, 1fr); }
+  .rtools { grid-column: 2; }
+  .ev { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  body { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <button id="brand" aria-label="Flight Rules home"><span class="mark" aria-hidden="true"></span>Flight Rules</button>
+    <nav id="steps" aria-label="Mission steps"></nav>
+    <button id="srcbtn">Data &amp; sources</button>
+  </div>
+</header>
+<div class="wrap">
+  <main id="main"></main>
+  <footer>
+    <p>Flight Rules · NASA Space Apps Challenge 2026 · Build a Junior Astronaut Mission Trainer. An independent student project, not an official NASA or ISRO product.</p>
+    <p>Data: NASA/JPL Horizons, NASA CCMC DONKI, ISRO Chandrayaan-3 mission reports, NASA-STD-3001 technical briefs, Zhang et al. 2020.</p>
+  </footer>
+</div>
+<script>
+(() => {
+'use strict';
+// ---- src/data/longNight.js ----
+// Environment record for mission "The Long Night".
+// Site: Chandrayaan-3 Vikram landing site (ISRO), approx. 69.37 S, 32.32 E.
+// Every array value is OBSERVED/COMPUTED by an official service; see `meta.sources`.
+// Retrieved 2026-10-09 by the Flight Rules pipeline (see /pipeline/README.md).
+
+const longNight = {
+  id: 'long-night',
+  name: 'The Long Night',
+  body: 'Moon',
+  site: {
+    name: 'Shiv Shakti point (Chandrayaan-3 Vikram landing site)',
+    lonE: 32.32,
+    lat: -69.37,
+    agency: 'ISRO',
+  },
+  // Hour 0 of every series below is this instant (UTC).
+  epochUTC: '2023-08-20T00:00:00Z',
+  // Horizons values are 6-hourly; the app interpolates linearly to hours.
+  // Max interpolation error vs. the hourly Horizons output: 0.011 deg (checked 2026-10-09).
+  stepHours: 6,
+  // Mission window, in hours since epoch.
+  missionStartHour: 84, // 2023-08-23 12:00 UT, landing day
+  missionEndHour: 792, // 2023-09-22 00:00 UT (33 days after epoch), the day ISRO tried to wake Vikram
+  sunElevDeg: [
+    -6.17, -5.11, -4.04, -2.97, -1.89, -0.81, 0.27, 1.35, 2.42, 3.48, 4.52, 5.55, 6.56, 7.56, 8.53, 9.47,
+    10.39, 11.27, 12.12, 12.94, 13.71, 14.45, 15.14, 15.79, 16.39, 16.94, 17.44, 17.89, 18.28, 18.61, 18.89,
+    19.11, 19.27, 19.37, 19.41, 19.38, 19.3, 19.16, 18.96, 18.7, 18.38, 18.01, 17.58, 17.1, 16.57, 15.99,
+    15.36, 14.68, 13.96, 13.2, 12.4, 11.57, 10.7, 9.8, 8.87, 7.92, 6.94, 5.94, 4.93, 3.89, 2.85, 1.79, 0.73,
+    -0.34, -1.4, -2.47, -3.54, -4.6, -5.65, -6.69, -7.72, -8.73, -9.72, -10.69, -11.63, -12.55, -13.43,
+    -14.29, -15.11, -15.88, -16.63, -17.32, -17.97, -18.58, -19.13, -19.63, -20.08, -20.47, -20.8, -21.08,
+    -21.3, -21.45, -21.55, -21.58, -21.55, -21.46, -21.31, -21.1, -20.82, -20.49, -20.1, -19.66, -19.16,
+    -18.6, -18, -17.35, -16.65, -15.91, -15.13, -14.31, -13.45, -12.56, -11.64, -10.69, -9.71, -8.72, -7.7,
+    -6.67, -5.62, -4.55, -3.48, -2.41, -1.32, -0.24, 0.84, 1.91, 2.98, 4.04, 5.09, 6.12, 7.14, 8.13, 9.1,
+    10.05, 10.97, 11.86, 12.71, 13.53, 14.31, 15.05, 15.74, 16.39, 17, 17.55, 18.05, 18.5, 18.9, 19.23,
+    19.52, 19.74, 19.9, 20, 20.04, 20.03, 19.95, 19.81, 19.61, 19.35, 19.04, 18.67, 18.24, 17.76, 17.23,
+    16.65, 16.02, 15.35, 14.63, 13.87, 13.07,
+  ],
+  earthElevDeg: [
+    18.5, 18.1, 17.7, 17.3, 16.9, 16.5, 16.1, 15.7, 15.3, 14.9, 14.5, 14.2, 13.8, 13.4, 13, 12.7, 12.3, 12,
+    11.7, 11.4, 11.1, 10.9, 10.6, 10.4, 10.2, 10, 9.9, 9.8, 9.7, 9.6, 9.6, 9.6, 9.6, 9.7, 9.8, 9.9, 10,
+    10.2, 10.4, 10.7, 11, 11.3, 11.6, 11.9, 12.3, 12.7, 13.1, 13.5, 14, 14.4, 14.9, 15.3, 15.8, 16.3, 16.7,
+    17.2, 17.7, 18.1, 18.6, 19, 19.4, 19.9, 20.3, 20.7, 21, 21.4, 21.7, 22.1, 22.4, 22.7, 22.9, 23.2, 23.4,
+    23.6, 23.8, 24, 24.1, 24.3, 24.4, 24.5, 24.5, 24.6, 24.6, 24.6, 24.6, 24.5, 24.5, 24.4, 24.3, 24.2,
+    24.1, 23.9, 23.7, 23.6, 23.4, 23.1, 22.9, 22.6, 22.4, 22.1, 21.8, 21.5, 21.2, 20.8, 20.5, 20.1, 19.8,
+    19.4, 19, 18.6, 18.2, 17.8, 17.4, 17, 16.6, 16.2, 15.8, 15.4, 15, 14.6, 14.2, 13.8, 13.4, 13.1, 12.7,
+    12.4, 12, 11.7, 11.4, 11.1, 10.8, 10.6, 10.4, 10.1, 10, 9.8, 9.7, 9.5, 9.5, 9.4, 9.4, 9.4, 9.4, 9.5,
+    9.6, 9.7, 9.8, 10, 10.2, 10.5, 10.7, 11, 11.4, 11.7, 12.1, 12.5, 12.9, 13.3, 13.8, 14.2, 14.7, 15.2,
+    15.7, 16.1, 16.6, 17.1, 17.6, 18.1, 18.6,
+  ],
+  // Real solar energetic particle (SEP) and strong flare events in the window (NASA DONKI).
+  solarEvents: [
+    { type: 'SEP', id: '2023-09-01T04:30:00-SEP-001', timeUTC: '2023-09-01T04:30Z', instrument: 'GOES-P: SEISS >10 MeV' },
+    { type: 'SEP', id: '2023-09-01T05:05:00-SEP-001', timeUTC: '2023-09-01T05:05Z', instrument: 'SOHO: COSTEP 15.8-39.8 MeV' },
+    { type: 'FLR', id: '2023-09-03T08:09:00-FLR-001', timeUTC: '2023-09-03T08:36Z', classType: 'M6.0' },
+    { type: 'FLR', id: '2023-09-20T14:11:00-FLR-001', timeUTC: '2023-09-20T14:19Z', classType: 'M8.2' },
+    { type: 'FLR', id: '2023-09-21T12:42:00-FLR-001', timeUTC: '2023-09-21T12:54Z', classType: 'M8.7' },
+  ],
+  // What really happened to the spacecraft at this site (ISRO announcements, as reported).
+  ghost: [
+    { timeUTC: '2023-08-23T12:33Z', label: 'Vikram lands', detail: 'Chandrayaan-3 lands near the lunar south pole. Design life: about 14 Earth days.' },
+    { timeUTC: '2023-09-02T12:00Z', label: 'Pragyan sleeps', detail: 'ISRO puts the rover into sleep mode, batteries charged, before nightfall.' },
+    { timeUTC: '2023-09-04T03:00Z', label: 'Vikram sleeps', detail: 'ISRO puts the lander into sleep mode ahead of the lunar night.' },
+    { timeUTC: '2023-09-22T00:00Z', label: 'No answer', detail: 'ISRO tries to wake both craft after sunrise. No signal is received.' },
+  ],
+  meta: {
+    retrievedUTC: '2026-10-09',
+    checksums: { sunElevSum: 512.09, earthElevSum: 2682.6, n: 169 },
+    sources: [
+      {
+        key: 'horizons',
+        label: 'OBSERVED/COMPUTED',
+        agency: 'NASA/JPL',
+        name: 'JPL Horizons API (DE441), airless apparent elevation of Sun (10) and Earth (399) from a site on the Moon (coord@301)',
+        url: 'https://ssd.jpl.nasa.gov/api/horizons.api',
+        notes: 'Flat reference surface: local terrain is not modelled, so real sunrise at the site can come later than this record shows.',
+      },
+      {
+        key: 'donki',
+        label: 'OBSERVED',
+        agency: 'NASA CCMC',
+        name: 'DONKI Space Weather Database (SEP, FLR)',
+        url: 'https://ccmc.gsfc.nasa.gov/DONKI-API/get/SEP?startDate=2023-08-20&endDate=2023-10-01',
+        notes: 'Event times only. DONKI does not give a dose on the lunar surface; the in-game storm dose is a GAME ESTIMATE.',
+      },
+      {
+        key: 'isro',
+        label: 'REPORTED',
+        agency: 'ISRO',
+        name: 'Chandrayaan-3 mission updates (landing, sleep and wake-up attempt dates)',
+        url: 'https://www.isro.gov.in/Chandrayaan3_Details.html',
+        notes: 'Used for the ghost timeline only.',
+      },
+    ],
+  },
+};
+
+// ---- src/sim/constants.js ----
+// Every number the simulator uses lives here, with its source and an honesty label.
+// Labels: PUBLISHED (value from a cited document), DERIVED (computed from cited values or physics),
+// GAME ESTIMATE (chosen for play; plausible order of magnitude, not a design value).
+
+const C = {
+  crew: { value: 4, unit: 'people', label: 'GAME ESTIMATE', source: 'Mission design choice' },
+
+  // --- Life support (NASA OCHMO-TB-002 Rev B, Nov 2023, derived from NASA-STD-3001 Vol 2 Rev D) ---
+  o2ActiveKgPerPersonDay: {
+    value: 1.083, unit: 'kg/person/day', label: 'PUBLISHED',
+    source: 'NASA OCHMO-TB-002 Rev B (2023): daily oxygen consumption with exercise',
+    url: 'https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-002-eclss.pdf',
+  },
+  o2RestKgPerPersonDay: {
+    value: 0.771, unit: 'kg/person/day', label: 'PUBLISHED',
+    source: 'NASA OCHMO-TB-002 Rev B (2023): resting oxygen consumption',
+    url: 'https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-002-eclss.pdf',
+  },
+  waterKgPerPersonDay: {
+    value: 2.5, unit: 'kg/person/day', label: 'PUBLISHED',
+    source: 'NASA-STD-3001 V2 6109 via OCHMO-TB-002: minimum 2.5 L drinking water per crewmember per day',
+    url: 'https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-002-eclss.pdf',
+  },
+  foodKcalPerPersonDay: {
+    value: 3035, unit: 'kcal/person/day', label: 'PUBLISHED',
+    source: 'NASA-STD-3001 V2 7003 via OCHMO-TB-002: average 3,035 kcal per crewmember per day',
+    url: 'https://www.nasa.gov/wp-content/uploads/2023/12/ochmo-tb-002-eclss.pdf',
+  },
+  foodKgPerPersonDay: { value: 1.0, unit: 'kg/person/day', label: 'GAME ESTIMATE', source: 'Packaged food incl. packaging, rounded' },
+  rationFactor: { value: 0.75, unit: '×', label: 'GAME ESTIMATE', source: 'Reduced rations' },
+
+  // --- Radiation ---
+  moonSurfaceDoseMSvPerDay: {
+    value: 1.369, unit: 'mSv/day', label: 'PUBLISHED',
+    source: "Zhang et al. 2020, Science Advances 6:eaaz1334 — Chang'e-4 LND dose equivalent on the lunar surface",
+    url: 'https://doi.org/10.1126/sciadv.aaz1334',
+  },
+  habitatShieldFactor: { value: 0.8, unit: '×', label: 'GAME ESTIMATE', source: 'Habitat walls give modest protection from galactic cosmic rays' },
+  stormDoseMSvPerHour: { value: 1.0, unit: 'mSv/h (unshielded)', label: 'GAME ESTIMATE', source: 'DONKI gives event times only; storm strength chosen for play' },
+  stormHours: { value: 24, unit: 'h', label: 'GAME ESTIMATE', source: 'Duration of the in-game storm pulse after each real DONKI SEP onset' },
+  shelterFullWallKg: { value: 3000, unit: 'kg water', label: 'GAME ESTIMATE', source: 'Water mass at which the shelter reaches its best protection' },
+  shelterBestFactor: { value: 0.3, unit: '×', label: 'GAME ESTIMATE', source: 'Water and hydrogen-rich materials cut storm protons strongly' },
+  doseBudgetMSv: {
+    value: 50, unit: 'mSv', label: 'GAME ESTIMATE',
+    source: 'Mission budget set at about 8% of NASA\'s 600 mSv career limit (NASA-STD-3001 Vol 1)',
+  },
+
+  // --- Power ---
+  batteryWhPerKg: { value: 150, unit: 'Wh/kg', label: 'GAME ESTIMATE', source: 'Typical lithium-ion pack-level specific energy' },
+  chargeEfficiency: { value: 0.92, unit: '×', label: 'GAME ESTIMATE', source: 'Battery charge/discharge losses' },
+  arrayKgPerKw: { value: 20, unit: 'kg/kW', label: 'GAME ESTIMATE', source: 'Sun-tracking array incl. mast' },
+  sunDiscRadiusDeg: { value: 0.27, unit: 'deg', label: 'DERIVED', source: 'Apparent solar radius from the Moon (~0.27°)' },
+  loadLifeSupportKw: { value: 1.0, unit: 'kW', label: 'GAME ESTIMATE', source: 'Air revitalization, fans, pumps for 4 crew' },
+  loadCommsKw: { value: 0.15, unit: 'kW', label: 'GAME ESTIMATE', source: 'Direct-to-Earth radio' },
+  loadScienceKw: { value: 0.6, unit: 'kW', label: 'GAME ESTIMATE', source: 'Science instruments and lab' },
+  loadGreenhousePerModuleKw: { value: 1.5, unit: 'kW', label: 'GAME ESTIMATE', source: 'LED grow lights + climate control per module' },
+  loadHeatDayKw: { value: 0.2, unit: 'kW', label: 'GAME ESTIMATE', source: 'Little heating needed in sunlight' },
+  loadHeatNightKw: { value: 1.5, unit: 'kW', label: 'GAME ESTIMATE', source: 'Keeping the habitat comfortable through a polar lunar night' },
+  loadHeatSurvivalKw: { value: 0.7, unit: 'kW', label: 'GAME ESTIMATE', source: 'Cold-but-safe survival heating' },
+
+  // --- Food production ---
+  greenhouseLitHoursToHarvest: { value: 240, unit: 'lit hours', label: 'GAME ESTIMATE', source: 'Fast salad crops; real crops take weeks' },
+  greenhouseKcalPerModuleDay: { value: 2000, unit: 'kcal/day per module', label: 'GAME ESTIMATE', source: 'Output once established, while lights are on' },
+
+  // --- Masses ---
+  massBudgetKg: { value: 10000, unit: 'kg', label: 'GAME ESTIMATE', source: 'Cargo you can land' },
+  greenhouseModuleKg: { value: 400, unit: 'kg', label: 'GAME ESTIMATE', source: 'One small growth module' },
+
+  // --- Failure thresholds ---
+  blackoutHoursToLoss: { value: 6, unit: 'h', label: 'GAME ESTIMATE', source: 'Without power, CO₂ builds up and the habitat freezes' },
+  starvationHoursToLoss: { value: 72, unit: 'h', label: 'GAME ESTIMATE', source: 'Crew must abort after 3 days without food' },
+};
+
+const v = (k) => C[k].value;
+
+// ---- src/sim/rules.js ----
+// Flight-rule grammar: IF <condition> THEN <action>.
+// Rules are checked every simulated hour from top to bottom. A rule whose condition is true
+// applies its action. If two true rules set the same system, the higher rule wins.
+// Systems keep their last setting until a rule changes it ("latched"), like real switches.
+
+const CONDITIONS = {
+  sunDown: { text: 'the Sun has set', needsValue: false, test: (s) => !s.sunUp },
+  sunUp: { text: 'the Sun is up', needsValue: false, test: (s) => s.sunUp },
+  stormOn: { text: 'a solar storm is underway', needsValue: false, test: (s) => s.stormActive },
+  stormOff: { text: 'no solar storm is underway', needsValue: false, test: (s) => !s.stormActive },
+  batteryBelow: { text: 'battery is below', needsValue: true, unit: '%', min: 1, max: 99, def: 30, test: (s, x) => s.batteryPct < x },
+  batteryAbove: { text: 'battery is above', needsValue: true, unit: '%', min: 1, max: 99, def: 60, test: (s, x) => s.batteryPct > x },
+  foodDaysBelow: { text: 'food left is under', needsValue: true, unit: 'days', min: 1, max: 60, def: 5, test: (s, x) => s.foodDays < x },
+  o2DaysBelow: { text: 'oxygen left is under', needsValue: true, unit: 'days', min: 1, max: 60, def: 5, test: (s, x) => s.o2Days < x },
+};
+
+// Each action sets one system to one setting.
+const ACTIONS = {
+  greenhouseOff: { text: 'switch greenhouse lights OFF', system: 'greenhouse', setting: false },
+  greenhouseOn: { text: 'switch greenhouse lights ON', system: 'greenhouse', setting: true },
+  scienceOff: { text: 'pause science', system: 'science', setting: false },
+  scienceOn: { text: 'resume science', system: 'science', setting: true },
+  heatSurvival: { text: 'set heaters to survival mode', system: 'heat', setting: 'survival' },
+  heatNormal: { text: 'set heaters to normal', system: 'heat', setting: 'normal' },
+  shelterIn: { text: 'move crew into the storm shelter', system: 'shelter', setting: true },
+  shelterOut: { text: 'let crew leave the shelter', system: 'shelter', setting: false },
+  restOn: { text: 'cancel exercise (rest days)', system: 'exercise', setting: false },
+  restOff: { text: 'resume exercise', system: 'exercise', setting: true },
+  rationOn: { text: 'reduce food rations', system: 'ration', setting: true },
+  rationOff: { text: 'return to full rations', system: 'ration', setting: false },
+};
+
+const DEFAULT_SYSTEMS = {
+  greenhouse: true,
+  science: true,
+  heat: 'normal',
+  shelter: false,
+  exercise: true,
+  ration: false,
+};
+
+const MAX_RULES = 6;
+
+function validateRule(rule) {
+  const c = CONDITIONS[rule?.if];
+  const a = ACTIONS[rule?.then];
+  if (!c) return `Unknown condition "${rule?.if}"`;
+  if (!a) return `Unknown action "${rule?.then}"`;
+  if (c.needsValue) {
+    const x = Number(rule.value);
+    if (!Number.isFinite(x)) return 'Pick a number for this rule';
+    if (x < c.min || x > c.max) return `Number must be between ${c.min} and ${c.max} ${c.unit}`;
+  }
+  return null;
+}
+
+function validateRulebook(rules) {
+  if (!Array.isArray(rules)) return ['Rulebook must be a list'];
+  const errs = [];
+  if (rules.length > MAX_RULES) errs.push(`At most ${MAX_RULES} rules`);
+  rules.forEach((r, i) => {
+    const e = validateRule(r);
+    if (e) errs.push(`Rule ${i + 1}: ${e}`);
+  });
+  return errs;
+}
+
+// Returns { systems, fired: [{index, rule, changed}] } for this hour.
+function applyRules(rules, sense, systems) {
+  const next = { ...systems };
+  const claimed = new Set();
+  const fired = [];
+  rules.forEach((rule, index) => {
+    const c = CONDITIONS[rule.if];
+    const a = ACTIONS[rule.then];
+    if (!c || !a) return;
+    if (!c.test(sense, Number(rule.value))) return;
+    if (claimed.has(a.system)) return; // a higher rule already set this system this hour
+    claimed.add(a.system);
+    const changed = next[a.system] !== a.setting;
+    next[a.system] = a.setting;
+    fired.push({ index, rule, changed });
+  });
+  return { systems: next, fired };
+}
+
+function ruleText(rule) {
+  const c = CONDITIONS[rule.if];
+  const a = ACTIONS[rule.then];
+  if (!c || !a) return 'Incomplete rule';
+  const cond = c.needsValue ? `${c.text} ${rule.value}${c.unit === '%' ? '%' : ' ' + c.unit}` : c.text;
+  return `IF ${cond} THEN ${a.text}`;
+}
+
+// ---- src/sim/engine.js ----
+// Flight Rules simulator. Pure and deterministic: same record + build + rules => same result.
+// No DOM, no clock, no randomness, so it runs identically in the browser and in Node tests.
+
+
+
+const DEFAULT_BUILD = {
+  arrayKw: 12,
+  batteryKwh: 900,
+  shelterWaterKg: 1200,
+  greenhouseModules: 1,
+  o2Days: 34,
+  waterDays: 34,
+  foodDays: 34,
+};
+
+const BUILD_LIMITS = {
+  arrayKw: { min: 0, max: 40, step: 1, unit: 'kW' },
+  batteryKwh: { min: 0, max: 1500, step: 50, unit: 'kWh' },
+  shelterWaterKg: { min: 0, max: 3000, step: 100, unit: 'kg' },
+  greenhouseModules: { min: 0, max: 3, step: 1, unit: 'modules' },
+  o2Days: { min: 0, max: 60, step: 1, unit: 'days' },
+  waterDays: { min: 0, max: 60, step: 1, unit: 'days' },
+  foodDays: { min: 0, max: 60, step: 1, unit: 'days' },
+};
+
+function massBreakdown(b) {
+  const crew = v('crew');
+  const parts = {
+    array: b.arrayKw * v('arrayKgPerKw'),
+    battery: (b.batteryKwh * 1000) / v('batteryWhPerKg'),
+    shelter: b.shelterWaterKg,
+    greenhouse: b.greenhouseModules * v('greenhouseModuleKg'),
+    oxygen: b.o2Days * crew * v('o2ActiveKgPerPersonDay'),
+    water: b.waterDays * crew * v('waterKgPerPersonDay'),
+    food: b.foodDays * crew * v('foodKgPerPersonDay'),
+  };
+  const total = Object.values(parts).reduce((a, x) => a + x, 0);
+  return { parts, total, budget: v('massBudgetKg'), over: total > v('massBudgetKg') + 1e-9 };
+}
+
+function validateBuild(b) {
+  const errs = [];
+  for (const [k, lim] of Object.entries(BUILD_LIMITS)) {
+    const x = b?.[k];
+    if (!Number.isFinite(x)) errs.push(`${k} is missing`);
+    else if (x < lim.min || x > lim.max) errs.push(`${k} must be ${lim.min}–${lim.max} ${lim.unit}`);
+  }
+  if (!errs.length && massBreakdown(b).over) errs.push('Cargo is over the mass budget');
+  return errs;
+}
+
+// Linear interpolation of a series sampled every `step` hours.
+function sampleAt(series, step, hour) {
+  const x = hour / step;
+  const i = Math.floor(x);
+  if (i < 0) return series[0];
+  if (i >= series.length - 1) return series[series.length - 1];
+  const f = x - i;
+  return series[i] + (series[i + 1] - series[i]) * f;
+}
+
+function hourOf(record, isoTime) {
+  return (Date.parse(isoTime) - Date.parse(record.epochUTC)) / 3600000;
+}
+
+function hourToDate(record, hour) {
+  return new Date(Date.parse(record.epochUTC) + hour * 3600000);
+}
+
+// Fraction of the solar disc above the (flat) horizon.
+function sunVisibleFraction(elevDeg) {
+  const r = v('sunDiscRadiusDeg');
+  return Math.min(1, Math.max(0, (elevDeg + r) / (2 * r)));
+}
+
+// Power from a vertical, Sun-tracking array: incidence angle equals the Sun's elevation.
+function arrayPowerKw(arrayKw, elevDeg) {
+  if (elevDeg <= -v('sunDiscRadiusDeg')) return 0;
+  return arrayKw * Math.cos((Math.max(0, elevDeg) * Math.PI) / 180) * sunVisibleFraction(elevDeg);
+}
+
+function stormWindows(record) {
+  const len = v('stormHours');
+  const seps = record.solarEvents.filter((e) => e.type === 'SEP').map((e) => hourOf(record, e.timeUTC)).sort((a, b) => a - b);
+  const wins = [];
+  for (const t of seps) {
+    const last = wins[wins.length - 1];
+    if (last && t <= last.end) last.end = Math.max(last.end, t + len);
+    else wins.push({ start: t, end: t + len });
+  }
+  return wins;
+}
+
+function simulate(record, build, rules = []) {
+  const crew = v('crew');
+  const eff = v('chargeEfficiency');
+  const start = record.missionStartHour;
+  const end = record.missionEndHour;
+  const storms = stormWindows(record);
+  const shelterCover = Math.min(1, build.shelterWaterKg / v('shelterFullWallKg'));
+  const shelterFactor = v('habitatShieldFactor') * (1 - (1 - v('shelterBestFactor')) * shelterCover);
+
+  const capKwh = build.batteryKwh;
+  const st = {
+    batteryKwh: capKwh * 0.8,
+    o2Kg: build.o2Days * crew * v('o2ActiveKgPerPersonDay'),
+    waterKg: build.waterDays * crew * v('waterKgPerPersonDay'),
+    foodKcal: build.foodDays * crew * v('foodKcalPerPersonDay'),
+    doseMSv: 0,
+    morale: 80,
+    litHours: 0,
+    blackoutRun: 0,
+    starveRun: 0,
+    scienceHours: 0,
+    systems: { ...DEFAULT_SYSTEMS },
+  };
+  if (build.greenhouseModules === 0) st.systems.greenhouse = false;
+
+  const series = [];
+  const events = [];
+  const energy = {}; // kWh delivered per system, split by day/night
+  const addE = (sys, phase, kwh) => {
+    energy[sys] ??= { day: 0, night: 0 };
+    energy[sys][phase] += kwh;
+  };
+  const marks = new Set();
+  const mark = (key, ev) => {
+    if (marks.has(key)) return;
+    marks.add(key);
+    events.push(ev);
+  };
+
+  let prevSunUp = null;
+  let prevStorm = false;
+  let outcome = null;
+
+  for (let h = start; h < end; h++) {
+    const sunElev = sampleAt(record.sunElevDeg, record.stepHours, h + 0.5);
+    const earthElev = sampleAt(record.earthElevDeg, record.stepHours, h + 0.5);
+    const sunUp = sunElev > 0;
+    const stormActive = storms.some((w) => h + 0.5 >= w.start && h + 0.5 < w.end);
+
+    if (prevSunUp !== null && sunUp !== prevSunUp) {
+      events.push({ h, kind: sunUp ? 'sunrise' : 'sunset', text: sunUp ? 'Sunrise: power returns' : 'Sunset: the long night begins', source: 'horizons' });
+    }
+    if (stormActive && !prevStorm) events.push({ h, kind: 'storm', text: 'Solar particle storm arrives (real event, Sep 1 2023)', source: 'donki' });
+    if (!stormActive && prevStorm) events.push({ h, kind: 'stormEnd', text: 'Solar storm passes', source: 'donki' });
+    prevSunUp = sunUp;
+    prevStorm = stormActive;
+
+    // --- sense ---
+    const o2Rate = crew * (st.systems.exercise ? v('o2ActiveKgPerPersonDay') : v('o2RestKgPerPersonDay')); // kg/day
+    const waterRate = crew * v('waterKgPerPersonDay');
+    const foodRate = crew * v('foodKcalPerPersonDay') * (st.systems.ration ? v('rationFactor') : 1);
+    const sense = {
+      sunUp,
+      stormActive,
+      batteryPct: capKwh > 0 ? (100 * st.batteryKwh) / capKwh : 0,
+      o2Days: st.o2Kg / o2Rate,
+      waterDays: st.waterKg / waterRate,
+      foodDays: st.foodKcal / foodRate,
+    };
+
+    // --- rules ---
+    const { systems, fired } = applyRules(rules, sense, st.systems);
+    if (build.greenhouseModules === 0) systems.greenhouse = false;
+    for (const f of fired) {
+      if (f.changed) events.push({ h, kind: 'rule', ruleIndex: f.index, text: `Rule ${f.index + 1} fired`, rule: f.rule });
+    }
+    st.systems = systems;
+
+    // --- power ---
+    const night = !sunUp;
+    const phase = night ? 'night' : 'day';
+    const heatKw = night ? (systems.heat === 'survival' ? v('loadHeatSurvivalKw') : v('loadHeatNightKw')) : v('loadHeatDayKw');
+    const loads = {
+      lifeSupport: v('loadLifeSupportKw'),
+      comms: v('loadCommsKw'),
+      heaters: heatKw,
+      science: systems.science ? v('loadScienceKw') : 0,
+      greenhouse: systems.greenhouse ? build.greenhouseModules * v('loadGreenhousePerModuleKw') : 0,
+    };
+    const loadKw = Object.values(loads).reduce((a, x) => a + x, 0);
+    const genKw = arrayPowerKw(build.arrayKw, sunElev);
+    let powered = true;
+    const net = genKw - loadKw;
+    if (net >= 0) {
+      st.batteryKwh = Math.min(capKwh, st.batteryKwh + net * eff);
+    } else if (st.batteryKwh >= -net) {
+      st.batteryKwh += net;
+    } else {
+      st.batteryKwh = 0;
+      powered = false;
+    }
+    if (powered) {
+      for (const [k, kw] of Object.entries(loads)) addE(k, phase, kw);
+      st.blackoutRun = 0;
+    } else {
+      st.blackoutRun += 1;
+      mark(`blackout-${Math.floor(h / 24)}`, { h, kind: 'blackout', text: 'Blackout: batteries empty, life support and heaters lose power', source: 'sim' });
+    }
+
+    // --- thresholds ---
+    const pct = capKwh > 0 ? (100 * st.batteryKwh) / capKwh : 0;
+    for (const t of [50, 25, 10]) {
+      if (pct < t) mark(`batt${t}`, { h, kind: 'battery', text: `Battery below ${t}%`, source: 'sim' });
+    }
+
+    // --- crew consumables ---
+    st.o2Kg = Math.max(0, st.o2Kg - o2Rate / 24);
+    st.waterKg = Math.max(0, st.waterKg - waterRate / 24);
+    st.foodKcal = Math.max(0, st.foodKcal - foodRate / 24);
+    if (powered && systems.greenhouse && build.greenhouseModules > 0) {
+      st.litHours += 1;
+      if (st.litHours >= v('greenhouseLitHoursToHarvest')) {
+        st.foodKcal += (build.greenhouseModules * v('greenhouseKcalPerModuleDay')) / 24;
+        mark('harvest', { h, kind: 'harvest', text: 'First greenhouse harvest', source: 'sim' });
+      }
+    }
+    st.starveRun = st.foodKcal <= 0 ? st.starveRun + 1 : 0;
+    for (const [k, days, label] of [['o2', st.o2Kg / o2Rate, 'Oxygen'], ['water', st.waterKg / waterRate, 'Water'], ['food', st.foodKcal / foodRate, 'Food']]) {
+      if (days < 3 && h < end - 72) mark(`low-${k}`, { h, kind: 'supply', text: `${label} below 3 days`, source: 'sim' });
+    }
+
+    // --- radiation ---
+    const protect = systems.shelter ? shelterFactor : v('habitatShieldFactor');
+    let doseRate = (v('moonSurfaceDoseMSvPerDay') / 24) * protect;
+    if (stormActive) doseRate += v('stormDoseMSvPerHour') * protect;
+    st.doseMSv += doseRate;
+    if (st.doseMSv > v('doseBudgetMSv')) mark('dose', { h, kind: 'dose', text: 'Crew passes the mission radiation budget', source: 'sim' });
+
+    // --- morale & science ---
+    let dm = 0.15;
+    if (night && systems.heat === 'survival') dm = -0.2;
+    if (systems.ration) dm -= 0.3;
+    if (!systems.exercise) dm -= 0.15;
+    if (systems.shelter) dm -= 0.1;
+    if (!powered) dm -= 1;
+    if (systems.science && powered) {
+      dm += 0.05;
+      st.scienceHours += 1;
+    }
+    st.morale = Math.min(100, Math.max(0, st.morale + dm));
+
+    series.push({
+      h,
+      sunElev,
+      earthElev,
+      genKw,
+      loadKw,
+      batteryPct: pct,
+      o2Days: st.o2Kg / o2Rate,
+      waterDays: st.waterKg / waterRate,
+      foodDays: st.foodKcal / foodRate,
+      doseMSv: st.doseMSv,
+      morale: st.morale,
+      powered,
+      stormActive,
+      systems: { ...systems },
+    });
+
+    // --- failure checks ---
+    let lost = null;
+    if (st.blackoutRun >= v('blackoutHoursToLoss')) lost = { reason: 'power', text: 'Life support and heaters were without power for 6 hours. The crew had to abandon the outpost.' };
+    else if (st.o2Kg <= 0) lost = { reason: 'oxygen', text: 'The oxygen supply ran out.' };
+    else if (st.waterKg <= 0) lost = { reason: 'water', text: 'The water supply ran out.' };
+    else if (st.starveRun >= v('starvationHoursToLoss')) lost = { reason: 'food', text: 'The crew went three days without food and had to abort.' };
+    if (lost) {
+      outcome = { status: 'lost', ...lost, atHour: h + 1 };
+      events.push({ h, kind: 'lost', text: lost.text, source: 'sim' });
+      break;
+    }
+  }
+
+  if (!outcome) outcome = { status: 'survived', atHour: end, text: 'The crew made it through to sunrise.' };
+  const last = series[series.length - 1];
+  outcome.scienceHours = st.scienceHours;
+  outcome.doseMSv = st.doseMSv;
+  outcome.overDoseBudget = st.doseMSv > v('doseBudgetMSv');
+  outcome.morale = st.morale;
+  outcome.minBatteryPct = Math.min(...series.map((s) => s.batteryPct));
+  outcome.finalBatteryPct = last ? last.batteryPct : 0;
+  events.sort((a, b) => a.h - b.h);
+  return { record: record.id, build: { ...build }, rules: rules.map((r) => ({ ...r })), series, events, energy, outcome };
+}
+
+// ---- src/sim/debrief.js ----
+// Debrief: explains a flight in a few plain sentences and finds the "first domino" —
+// the earliest decision that set the failure in motion. Pure functions over a simulate() result.
+
+
+
+const SURVIVAL_NIGHT_KW = () => v('loadLifeSupportKw') + v('loadCommsKw') + v('loadHeatSurvivalKw');
+
+// Sunset and next sunrise inside the mission window, read from the environment record itself
+// (not from the flight), so the night length is right even when a flight ends early.
+function nightLength(record) {
+  let sunsetHour = null;
+  for (let h = record.missionStartHour; h < record.missionEndHour; h++) {
+    const up = sampleAt(record.sunElevDeg, record.stepHours, h + 0.5) > 0;
+    if (sunsetHour === null && !up) sunsetHour = h;
+    if (sunsetHour !== null && up) return { sunsetHour, sunriseHour: h };
+  }
+  return sunsetHour === null ? null : { sunsetHour, sunriseHour: null };
+}
+
+function firstDomino(result, record) {
+  const o = result.outcome;
+  const b = result.build;
+  const s = result.series;
+  const night = nightLength(record);
+  const steps = [];
+
+  if (o.status === 'survived') {
+    const worst = s.reduce((m, x) => (x.batteryPct < m.batteryPct ? x : m), s[0]);
+    const doseNote = o.overDoseBudget ? ` But the crew took ${o.doseMSv.toFixed(1)} mSv, over the ${v('doseBudgetMSv')} mSv budget — try the storm shelter.` : '';
+    return {
+      headline: 'Survived the long night',
+      domino: null,
+      chain: [`Closest call: the battery fell to ${worst.batteryPct.toFixed(0)}% on mission day ${Math.floor((worst.h - record.missionStartHour) / 24) + 1}.${doseNote}`],
+      worstHour: worst.h,
+    };
+  }
+
+  if (o.reason === 'power' && night) {
+    const atSunset = s.find((x) => x.h === night.sunsetHour);
+    const pctAtSunset = atSunset ? atSunset.batteryPct : 0;
+    const nightHours = (night.sunriseHour ?? record.missionEndHour) - night.sunsetHour;
+    const minNightKwh = SURVIVAL_NIGHT_KW() * nightHours;
+    const e = result.energy;
+    const nightUse = (k) => (e[k] ? e[k].night : 0);
+    const heatExtra = Math.max(0, nightUse('heaters') - v('loadHeatSurvivalKw') * Math.min(nightHours, o.atHour - night.sunsetHour));
+    const discretionary = [
+      { key: 'greenhouse', kwh: nightUse('greenhouse'), fix: 'add a rule: IF the Sun has set THEN switch greenhouse lights OFF' },
+      { key: 'science', kwh: nightUse('science'), fix: 'add a rule: IF battery is below 40% THEN pause science' },
+      { key: 'normal heating', kwh: heatExtra, fix: 'add a rule: IF the Sun has set THEN set heaters to survival mode' },
+    ].sort((a, b2) => b2.kwh - a.kwh);
+
+    if (b.batteryKwh < minNightKwh) {
+      return {
+        headline: 'Lost in the dark',
+        domino: 'build',
+        chain: [
+          `The night lasts about ${Math.round(nightHours)} hours. Even in survival mode the outpost needs about ${Math.round(minNightKwh)} kWh to get through it.`,
+          `Your batteries hold ${b.batteryKwh} kWh, so no rule could save this build.`,
+          'First domino: the batteries were too small. Trade some cargo for battery capacity.',
+        ],
+        worstHour: o.atHour,
+      };
+    }
+    if (pctAtSunset < 90) {
+      return {
+        headline: 'Lost in the dark',
+        domino: 'charge',
+        chain: [
+          `At sunset the battery was only ${pctAtSunset.toFixed(0)}% full.`,
+          'Daytime loads used the sunlight that should have filled the batteries.',
+          'First domino: too little solar array, or too many systems running in daylight.',
+        ],
+        worstHour: night.sunsetHour,
+      };
+    }
+    const top = discretionary[0];
+    return {
+      headline: 'Lost in the dark',
+      domino: top.key,
+      chain: [
+        `Sunset came with the battery ${pctAtSunset.toFixed(0)}% full.`,
+        `During the night, ${top.key} used ${Math.round(top.kwh)} kWh that life support needed.`,
+        `First domino: nothing switched ${top.key} down after sunset. To fix it, ${top.fix}.`,
+      ],
+      worstHour: o.atHour,
+    };
+  }
+
+  const supply = { oxygen: 'oxygen', water: 'water', food: 'food' }[o.reason];
+  if (supply) {
+    steps.push(`The ${supply} ran out on mission day ${Math.floor((o.atHour - record.missionStartHour) / 24) + 1}.`);
+    steps.push(`The mission lasts ${Math.round((record.missionEndHour - record.missionStartHour) / 24)} days. Pack more ${supply}${supply === 'food' ? ', grow it, or ration it' : supply === 'oxygen' ? ', or rest the crew to use less' : ''}.`);
+    return { headline: `Out of ${supply}`, domino: supply, chain: steps, worstHour: o.atHour };
+  }
+
+  return { headline: 'Mission lost', domino: null, chain: [o.text], worstHour: o.atHour };
+}
+
+// ---- src/share.js ----
+// Share codes: a rulebook + build packed into a short URL-safe string. No accounts, no personal data.
+
+
+const KEYS = ['arrayKw', 'batteryKwh', 'shelterWaterKg', 'greenhouseModules', 'o2Days', 'waterDays', 'foodDays'];
+
+function toB64Url(s) {
+  const b64 = typeof btoa === 'function' ? btoa(s) : Buffer.from(s, 'binary').toString('base64');
+  return b64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function fromB64Url(s) {
+  const b64 = s.replace(/-/g, '+').replace(/_/g, '/');
+  return typeof atob === 'function' ? atob(b64) : Buffer.from(b64, 'base64').toString('binary');
+}
+
+function encodeShare(build, rules) {
+  const payload = {
+    v: 1,
+    b: KEYS.map((k) => build[k]),
+    r: rules.map((r) => (r.value !== undefined ? [r.if, r.then, r.value] : [r.if, r.then])),
+  };
+  return toB64Url(JSON.stringify(payload));
+}
+
+function decodeShare(code) {
+  try {
+    const p = JSON.parse(fromB64Url(String(code).trim()));
+    if (p.v !== 1 || !Array.isArray(p.b) || !Array.isArray(p.r)) return null;
+    const build = Object.fromEntries(KEYS.map((k, i) => [k, Number(p.b[i])]));
+    const rules = p.r.map((x) => (x.length === 3 ? { if: x[0], then: x[1], value: Number(x[2]) } : { if: x[0], then: x[1] }));
+    if (validateBuild(build).length || validateRulebook(rules).length) return null;
+    return { build, rules };
+  } catch {
+    return null;
+  }
+}
+
+// ---- src/app.js ----
+// Flight Rules — UI. Talks to the pure simulator; holds no science of its own.
+
+
+
+
+
+
+const REC = longNight;
+const $ = (sel, root = document) => root.querySelector(sel);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, val] of Object.entries(attrs)) {
+    if (val === null || val === undefined || val === false) continue;
+    if (k === 'class') n.className = val;
+    else if (k === 'text') n.textContent = val;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), val);
+    else n.setAttribute(k, val === true ? '' : val);
+  }
+  for (const kid of kids.flat()) if (kid !== null && kid !== undefined && kid !== false) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return n;
+};
+const SVGNS = 'http://www.w3.org/2000/svg';
+const svg = (tag, attrs = {}, ...kids) => {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, val] of Object.entries(attrs)) if (val !== null && val !== undefined) n.setAttribute(k, val);
+  for (const kid of kids.flat()) if (kid) n.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  return n;
+};
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const fmtDate = (h) => {
+  const d = hourToDate(REC, h);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}, ${String(d.getUTCHours()).padStart(2, '0')}:00 UTC`;
+};
+const fmtDay = (h) => {
+  const d = hourToDate(REC, h);
+  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`;
+};
+const missionDay = (h) => Math.floor((h - REC.missionStartHour) / 24) + 1;
+
+// ---------------- state ----------------
+const STARTER_RULES = [
+  { if: 'stormOn', then: 'shelterIn' },
+  { if: 'stormOff', then: 'shelterOut' },
+];
+const state = {
+  screen: 'intro',
+  build: { ...DEFAULT_BUILD },
+  rules: STARTER_RULES.map((r) => ({ ...r })),
+  result: null,
+  prev: null,
+  flights: 0,
+  play: { i: 0, timer: null, speed: 40 },
+};
+
+function saveLocal() {
+  try {
+    localStorage.setItem('flight-rules', JSON.stringify({ build: state.build, rules: state.rules }));
+  } catch {}
+}
+function loadLocal() {
+  try {
+    const s = JSON.parse(localStorage.getItem('flight-rules') || 'null');
+    if (s && !validateBuild(s.build).length && !validateRulebook(s.rules).length) {
+      state.build = s.build;
+      state.rules = s.rules;
+    }
+  } catch {}
+}
+
+// ---------------- navigation ----------------
+const STEPS = [
+  ['build', 'Build'],
+  ['rules', 'Write rules'],
+  ['fly', 'Fly'],
+  ['debrief', 'Debrief'],
+];
+function go(screen) {
+  stopPlay();
+  state.screen = screen;
+  render();
+  window.scrollTo({ top: 0, behavior: 'instant' in window ? 'instant' : 'auto' });
+}
+
+function renderNav() {
+  const nav = $('#steps');
+  nav.replaceChildren(
+    ...STEPS.map(([id, label], i) => {
+      const enabled = id === 'build' || id === 'rules' || (id === 'fly' && state.screen !== 'intro') || (id === 'debrief' && state.result);
+      return el(
+        'button',
+        {
+          class: 'step' + (state.screen === id ? ' on' : ''),
+          'aria-current': state.screen === id ? 'step' : null,
+          disabled: !enabled,
+          onclick: () => (id === 'fly' ? startFlight() : go(id)),
+        },
+        el('span', { class: 'n', text: String(i + 1) }),
+        el('span', { text: label }),
+      );
+    }),
+  );
+}
+
+// ---------------- charts ----------------
+const W = 1000;
+function xOf(h) {
+  return 48 + ((h - REC.missionStartHour) / (REC.missionEndHour - REC.missionStartHour)) * (W - 64);
+}
+
+function missionChart({ result = null, prev = null, playH = null, compact = false } = {}) {
+  const sunTop = 26, sunH = compact ? 56 : 64;
+  const batTop = sunTop + sunH + 26, batH = compact ? 0 : 150;
+  const H = compact ? sunTop + sunH + 34 : batTop + batH + 34;
+  const s = svg('svg', { viewBox: `0 0 ${W} ${H}`, class: 'chart', role: 'img', 'aria-label': 'Mission timeline: real Sun elevation at the landing site, with battery charge from your flight' });
+  const start = REC.missionStartHour, end = REC.missionEndHour;
+  const night = nightLength(REC);
+  const bottom = compact ? sunTop + sunH : batTop + batH;
+
+  // night band (observed)
+  if (night) {
+    const x0 = xOf(night.sunsetHour), x1 = xOf(night.sunriseHour ?? end);
+    s.append(svg('rect', { x: x0, y: sunTop - 6, width: x1 - x0, height: bottom - sunTop + 6, class: 'nightband' }));
+    s.append(svg('text', { x: (x0 + x1) / 2, y: sunTop + sunH / 2 + 4, class: 'nightlabel', 'text-anchor': 'middle' }, `Lunar night · ${Math.round((night.sunriseHour - night.sunsetHour) / 24 * 10) / 10} Earth days`));
+  }
+  // storms (observed times)
+  const storms = REC.solarEvents.filter((e) => e.type === 'SEP').map((e) => hourOf(REC, e.timeUTC));
+  if (storms.length) {
+    const t0 = Math.min(...storms), t1 = Math.max(...storms) + C.stormHours.value;
+    s.append(svg('rect', { x: xOf(t0), y: sunTop - 6, width: xOf(t1) - xOf(t0), height: bottom - sunTop + 6, class: 'stormband' }));
+    s.append(svg('text', { x: xOf(t1) + 4, y: bottom - 6, class: 'tick storm' }, 'Solar storm · DONKI'));
+  }
+
+  // sun strip
+  const ymin = -25, ymax = 25;
+  const ySun = (e) => sunTop + ((ymax - e) / (ymax - ymin)) * sunH;
+  s.append(svg('line', { x1: 48, x2: W - 16, y1: ySun(0), y2: ySun(0), class: 'horizon' }));
+  let d = '';
+  for (let h = start; h <= end; h += 2) d += `${h === start ? 'M' : 'L'}${xOf(h).toFixed(1)} ${ySun(sampleAt(REC.sunElevDeg, REC.stepHours, h)).toFixed(1)}`;
+  s.append(svg('path', { d, class: 'sunline' }));
+  s.append(svg('text', { x: 44, y: ySun(0) + 4, class: 'tick', 'text-anchor': 'end' }, '0°'));
+  s.append(svg('text', { x: 44, y: ySun(20) + 4, class: 'tick', 'text-anchor': 'end' }, '20°'));
+  s.append(svg('text', { x: 52, y: sunTop - 10, class: 'axislabel' }, 'Sun elevation at the site · OBSERVED (JPL Horizons)'));
+
+  // ghost markers (reported)
+  for (const g of REC.ghost) {
+    const h = hourOf(REC, g.timeUTC);
+    if (h < start || h > end) continue;
+    const x = xOf(h);
+    const grp = svg('g', { class: 'ghost' });
+    grp.append(svg('title', {}, `${g.label} (${fmtDay(h)}): ${g.detail} Source: ISRO.`));
+    grp.append(svg('path', { d: `M${x} ${bottom + 6}l6 6l-6 6l-6 -6z` }));
+    s.append(grp);
+  }
+  // date ticks
+  for (let h = start; h <= end; h += 24) {
+    if ((h - start) % 120 !== 0) continue;
+    s.append(svg('text', { x: xOf(h), y: H - 4, class: 'tick', 'text-anchor': 'middle' }, fmtDay(h)));
+  }
+  s.append(svg('text', { x: W - 16, y: sunTop - 10, class: 'tick', 'text-anchor': 'end' }, '◆ = what Vikram did (ISRO)'));
+
+  if (!compact) {
+    const yB = (p) => batTop + ((100 - p) / 100) * batH;
+    for (const p of [0, 50, 100]) {
+      s.append(svg('line', { x1: 48, x2: W - 16, y1: yB(p), y2: yB(p), class: 'grid' }));
+      s.append(svg('text', { x: 44, y: yB(p) + 4, class: 'tick', 'text-anchor': 'end' }, `${p}%`));
+    }
+    s.append(svg('text', { x: 52, y: batTop - 8, class: 'axislabel' }, 'Battery charge · SIMULATED from your build and rules'));
+    const path = (series, upto) => {
+      let dd = '';
+      series.forEach((pt, i) => {
+        if (upto !== null && pt.h > upto) return;
+        dd += `${i ? 'L' : 'M'}${xOf(pt.h).toFixed(1)} ${yB(pt.batteryPct).toFixed(1)}`;
+      });
+      return dd;
+    };
+    if (prev) s.append(svg('path', { d: path(prev.series, null), class: 'prevline' }));
+    if (result) {
+      s.append(svg('path', { d: path(result.series, playH), class: 'battline' }));
+      if (result.outcome.status === 'lost' && (playH === null || playH >= result.outcome.atHour - 1)) {
+        const x = xOf(result.outcome.atHour);
+        s.append(svg('line', { x1: x, x2: x, y1: batTop, y2: batTop + batH, class: 'lostline' }));
+        s.append(svg('text', { x: x + 6, y: batTop + 14, class: 'tick lost' }, 'Mission lost'));
+      }
+    }
+    if (prev) s.append(svg('text', { x: W - 16, y: batTop - 8, class: 'tick', 'text-anchor': 'end' }, '- - - previous flight'));
+  }
+  if (playH !== null) {
+    const x = xOf(playH);
+    s.append(svg('line', { x1: x, x2: x, y1: sunTop - 6, y2: bottom, class: 'playhead' }));
+  }
+  return el('div', { class: 'chartwrap' }, s);
+}
+
+// ---------------- screens ----------------
+function infoTip(key) {
+  const c = C[key];
+  if (!c) return null;
+  const tip = `${c.value} ${c.unit} · ${c.label} · ${c.source}`;
+  return el('span', { class: 'tag ' + c.label.replace(' ', '-').toLowerCase(), title: tip, tabindex: 0, 'aria-label': tip }, c.label === 'GAME ESTIMATE' ? 'EST' : c.label === 'PUBLISHED' ? 'PUB' : 'DER');
+}
+
+function screenIntro() {
+  const night = nightLength(REC);
+  return el(
+    'section',
+    { class: 'intro' },
+    el(
+      'div',
+      { class: 'introtext' },
+      el('p', { class: 'eyebrow', text: 'Junior astronaut mission trainer' }),
+      el('h1', {}, 'Write the rules', el('br'), 'before the night falls.'),
+      el(
+        'p',
+        { class: 'lede' },
+        'Real flight controllers decide what to do ',
+        el('em', { text: 'before' }),
+        ' trouble starts, and write those decisions down as flight rules. Here you do the same: pack an outpost, write up to six rules, then watch it live through what really happened at a real place on the Moon.',
+      ),
+      el('div', { class: 'cta' }, el('button', { class: 'primary', onclick: () => go('build') }, 'Start the mission'), el('button', { class: 'ghostbtn', onclick: () => go('sources') }, 'Where the data comes from')),
+    ),
+    el(
+      'article',
+      { class: 'missioncard' },
+      el('p', { class: 'eyebrow', text: 'Mission 1 · Moon' }),
+      el('h2', { text: REC.name }),
+      el('p', { class: 'sitename' }, `${REC.site.name}, ${Math.abs(REC.site.lat)}° S, ${REC.site.lonE}° E`),
+      el(
+        'dl',
+        { class: 'facts' },
+        el('div', {}, el('dt', { text: 'Window' }), el('dd', { text: `${fmtDay(REC.missionStartHour)} – ${fmtDay(REC.missionEndHour)}, 2023` })),
+        el('div', {}, el('dt', { text: 'Crew' }), el('dd', { text: `${C.crew.value} astronauts` })),
+        el('div', {}, el('dt', { text: 'Sunset' }), el('dd', { text: fmtDate(night.sunsetHour) })),
+        el('div', {}, el('dt', { text: 'Night' }), el('dd', { text: `${Math.round(night.sunriseHour - night.sunsetHour)} hours of darkness` })),
+      ),
+      missionChart({ compact: true }),
+      el('p', { class: 'small', text: 'In 2023, India\'s Vikram lander worked here for one lunar day, slept through the night, and never woke up. Can your crew last until sunrise?' }),
+    ),
+  );
+}
+
+function screenBuild() {
+  const m = massBreakdown(state.build);
+  const rows = [
+    ['arrayKw', 'Solar array', 'Sun-tracking panels. More panels charge the batteries faster.', 'arrayKgPerKw'],
+    ['batteryKwh', 'Batteries', 'Your only power at night.', 'batteryWhPerKg'],
+    ['shelterWaterKg', 'Storm shelter water wall', 'Water blocks solar storm particles.', 'shelterBestFactor'],
+    ['greenhouseModules', 'Greenhouse modules', 'Grows food, but its lights use a lot of power.', 'greenhouseKcalPerModuleDay'],
+    ['o2Days', 'Oxygen supply', `${C.o2ActiveKgPerPersonDay.value} kg per person per day.`, 'o2ActiveKgPerPersonDay'],
+    ['waterDays', 'Water supply', `${C.waterKgPerPersonDay.value} kg per person per day.`, 'waterKgPerPersonDay'],
+    ['foodDays', 'Food supply', `${C.foodKcalPerPersonDay.value.toLocaleString()} kcal per person per day.`, 'foodKcalPerPersonDay'],
+  ];
+  const partKey = { arrayKw: 'array', batteryKwh: 'battery', shelterWaterKg: 'shelter', greenhouseModules: 'greenhouse', o2Days: 'oxygen', waterDays: 'water', foodDays: 'food' };
+  const missionDays = Math.round((REC.missionEndHour - REC.missionStartHour) / 24);
+  const pct = Math.min(100, (m.total / m.budget) * 100);
+  return el(
+    'section',
+    { class: 'build' },
+    el('header', { class: 'screenhead' }, el('h2', { text: 'Pack the lander' }), el('p', { text: `Everything has to fit in ${m.budget.toLocaleString()} kg. The mission lasts about ${missionDays} days, and about half of that is night.` })),
+    el(
+      'div',
+      { id: 'massbar', class: 'massbar' + (m.over ? ' over' : ''), role: 'meter', 'aria-valuemin': 0, 'aria-valuemax': m.budget, 'aria-valuenow': Math.round(m.total), 'aria-label': 'Cargo mass' },
+      el('div', { class: 'fill', style: `width:${pct}%` }),
+      el('span', { class: 'masstext', text: `${Math.round(m.total).toLocaleString()} kg of ${m.budget.toLocaleString()} kg${m.over ? ' — too heavy to launch' : ''}` }),
+    ),
+    el(
+      'div',
+      { class: 'sliders' },
+      ...rows.map(([k, name, help, ck]) => {
+        const lim = BUILD_LIMITS[k];
+        const id = `b-${k}`;
+        return el(
+          'div',
+          { class: 'slider' },
+          el('label', { for: id }, el('span', { class: 'sname', text: name }), infoTip(ck)),
+          el('output', { for: id, id: `out-${k}`, class: 'sval', text: `${state.build[k]} ${lim.unit}` }),
+          el('input', {
+            id,
+            type: 'range',
+            min: lim.min,
+            max: lim.max,
+            step: lim.step,
+            value: state.build[k],
+            oninput: (e) => {
+              state.build[k] = Number(e.target.value);
+              saveLocal();
+              updateBuildReadouts();
+            },
+          }),
+          el('p', { class: 'shelp' }, help, ' ', el('span', { class: 'kg', id: `kg-${k}`, text: `${Math.round(m.parts[partKey[k]]).toLocaleString()} kg` })),
+        );
+      }),
+    ),
+    el('div', { class: 'next' }, el('button', { id: 'build-next', class: 'primary', disabled: m.over, onclick: () => go('rules') }, m.over ? 'Too heavy: remove some cargo' : 'Next: write your flight rules')),
+  );
+}
+
+const PART_KEY = { arrayKw: 'array', batteryKwh: 'battery', shelterWaterKg: 'shelter', greenhouseModules: 'greenhouse', o2Days: 'oxygen', waterDays: 'water', foodDays: 'food' };
+function updateBuildReadouts() {
+  const m = massBreakdown(state.build);
+  for (const k of Object.keys(PART_KEY)) {
+    const out = document.getElementById(`out-${k}`);
+    if (out) out.textContent = `${state.build[k]} ${BUILD_LIMITS[k].unit}`;
+    const kg = document.getElementById(`kg-${k}`);
+    if (kg) kg.textContent = `${Math.round(m.parts[PART_KEY[k]]).toLocaleString()} kg`;
+  }
+  const bar = $('#massbar');
+  bar.classList.toggle('over', m.over);
+  bar.setAttribute('aria-valuenow', Math.round(m.total));
+  $('.fill', bar).style.width = `${Math.min(100, (m.total / m.budget) * 100)}%`;
+  $('.masstext', bar).textContent = `${Math.round(m.total).toLocaleString()} kg of ${m.budget.toLocaleString()} kg${m.over ? ' — too heavy to launch' : ''}`;
+  const nb = $('#build-next');
+  nb.disabled = m.over;
+  nb.textContent = m.over ? 'Too heavy: remove some cargo' : 'Next: write your flight rules';
+}
+
+function ruleCard(rule, i) {
+  const c = CONDITIONS[rule.if];
+  const condSel = el(
+    'select',
+    {
+      id: `r${i}-if`,
+      'aria-label': `Rule ${i + 1} condition`,
+      onchange: (e) => {
+        rule.if = e.target.value;
+        const nc = CONDITIONS[rule.if];
+        if (nc.needsValue) rule.value = rule.value ?? nc.def;
+        else delete rule.value;
+        saveLocal();
+        render();
+      },
+    },
+    ...Object.entries(CONDITIONS).map(([k, x]) => el('option', { value: k, selected: k === rule.if }, x.text)),
+  );
+  const valInput = c.needsValue
+    ? el('span', { class: 'valwrap' }, el('input', {
+        id: `r${i}-val`, type: 'number', min: c.min, max: c.max, value: rule.value, 'aria-label': `Rule ${i + 1} number`,
+        onchange: (e) => { rule.value = Number(e.target.value); saveLocal(); render(); },
+      }), el('span', { class: 'unit', text: c.unit }))
+    : null;
+  const actSel = el(
+    'select',
+    { id: `r${i}-then`, 'aria-label': `Rule ${i + 1} action`, onchange: (e) => { rule.then = e.target.value; saveLocal(); render(); } },
+    ...Object.entries(ACTIONS).map(([k, x]) => el('option', { value: k, selected: k === rule.then }, x.text)),
+  );
+  const move = (d) => {
+    const j = i + d;
+    if (j < 0 || j >= state.rules.length) return;
+    [state.rules[i], state.rules[j]] = [state.rules[j], state.rules[i]];
+    saveLocal();
+    render();
+  };
+  return el(
+    'li',
+    { class: 'rulecard', 'data-rule': i },
+    el('span', { class: 'rnum', text: String(i + 1).padStart(2, '0') }),
+    el('div', { class: 'rbody' }, el('span', { class: 'kw', text: 'IF' }), condSel, valInput, el('span', { class: 'kw', text: 'THEN' }), actSel),
+    el(
+      'div',
+      { class: 'rtools' },
+      el('button', { class: 'icon', 'aria-label': `Move rule ${i + 1} up`, disabled: i === 0, onclick: () => move(-1) }, '↑'),
+      el('button', { class: 'icon', 'aria-label': `Move rule ${i + 1} down`, disabled: i === state.rules.length - 1, onclick: () => move(1) }, '↓'),
+      el('button', { class: 'icon', 'aria-label': `Delete rule ${i + 1}`, onclick: () => { state.rules.splice(i, 1); saveLocal(); render(); } }, '×'),
+    ),
+  );
+}
+
+function screenRules() {
+  const errs = validateRulebook(state.rules);
+  const hints = [
+    { if: 'sunDown', then: 'greenhouseOff' },
+    { if: 'sunDown', then: 'heatSurvival' },
+    { if: 'batteryBelow', value: 40, then: 'scienceOff' },
+    { if: 'batteryAbove', value: 70, then: 'scienceOn' },
+  ].filter((h) => !state.rules.some((r) => r.if === h.if && r.then === h.then));
+  return el(
+    'section',
+    { class: 'rules' },
+    el(
+      'header',
+      { class: 'screenhead' },
+      el('h2', { text: 'Write your flight rules' }),
+      el('p', { text: 'Every hour the outpost reads your rules from top to bottom. If a rule is true, it acts. If two rules switch the same system, the higher one wins. A system stays as it is until a rule changes it.' }),
+    ),
+    el(
+      'div',
+      { class: 'binder' },
+      el('div', { class: 'binderhead' }, el('span', { text: 'FLIGHT RULES' }), el('span', { text: `${REC.name.toUpperCase()} · ${state.rules.length}/${MAX_RULES}` })),
+      state.rules.length
+        ? el('ol', { class: 'rulelist' }, ...state.rules.map(ruleCard))
+        : el('p', { class: 'empty', text: 'No rules yet. Without rules, every system stays on all mission long.' }),
+      el(
+        'div',
+        { class: 'addrow' },
+        el('button', {
+          class: 'secondary',
+          disabled: state.rules.length >= MAX_RULES,
+          onclick: () => { state.rules.push({ if: 'batteryBelow', value: 30, then: 'scienceOff' }); saveLocal(); render(); },
+        }, state.rules.length >= MAX_RULES ? 'Rulebook full (6 rules)' : '+ Add a rule'),
+      ),
+    ),
+    hints.length && state.flights > 0 && state.rules.length < MAX_RULES
+      ? el('div', { class: 'hints' }, el('p', { class: 'eyebrow', text: 'Ideas from other flight controllers' }), ...hints.slice(0, 3).map((h) => el('button', { class: 'hint', onclick: () => { state.rules.push({ ...h }); saveLocal(); render(); } }, '+ ', ruleText(h))))
+      : null,
+    errs.length ? el('ul', { class: 'errors', role: 'alert' }, ...errs.map((e) => el('li', { text: e }))) : null,
+    el('div', { class: 'next' }, el('button', { class: 'ghostbtn', onclick: () => go('build') }, 'Back to packing'), el('button', { class: 'primary', disabled: errs.length > 0, onclick: startFlight }, state.flights ? 'Fly the same record again' : 'Fly the mission')),
+  );
+}
+
+// ---------------- flight ----------------
+function startFlight() {
+  if (validateBuild(state.build).length) return go('build');
+  if (validateRulebook(state.rules).length) return go('rules');
+  if (state.result) state.prev = state.result;
+  state.result = simulate(REC, state.build, state.rules);
+  state.flights += 1;
+  state.play.i = 0;
+  state.screen = 'fly';
+  render();
+  window.scrollTo({ top: 0 });
+  resumePlay();
+}
+function stopPlay() {
+  if (state.play.timer) clearInterval(state.play.timer);
+  state.play.timer = null;
+}
+function resumePlay() {
+  stopPlay();
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  const stepPer = reduce ? 6 : 1;
+  state.play.timer = setInterval(() => {
+    const n = state.result.series.length;
+    state.play.i = Math.min(n - 1, state.play.i + stepPer);
+    updateFly();
+    if (state.play.i >= n - 1) {
+      stopPlay();
+      updateFly(true);
+    }
+  }, state.play.speed);
+}
+
+const SYS_LABELS = {
+  greenhouse: ['Greenhouse', (x) => (x ? 'ON' : 'OFF')],
+  science: ['Science', (x) => (x ? 'ON' : 'PAUSED')],
+  heat: ['Heaters', (x) => (x === 'normal' ? 'NORMAL' : 'SURVIVAL')],
+  shelter: ['Crew', (x) => (x ? 'IN SHELTER' : 'IN HABITAT')],
+  exercise: ['Exercise', (x) => (x ? 'ON' : 'REST')],
+  ration: ['Rations', (x) => (x ? 'REDUCED' : 'FULL')],
+};
+
+function screenFly() {
+  return el(
+    'section',
+    { class: 'fly' },
+    el(
+      'header',
+      { class: 'flyhead' },
+      el('div', {}, el('p', { class: 'eyebrow', id: 'fly-day', text: '' }), el('h2', { id: 'fly-date', text: '' })),
+      el(
+        'div',
+        { class: 'controls', role: 'group', 'aria-label': 'Playback' },
+        el('button', { id: 'pp', class: 'secondary', onclick: () => (state.play.timer ? (stopPlay(), updateFly()) : resumePlay()) }, 'Pause'),
+        el(
+          'select',
+          { id: 'speed', 'aria-label': 'Playback speed', onchange: (e) => { state.play.speed = Number(e.target.value); if (state.play.timer) resumePlay(); } },
+          ...[[80, 'Slow'], [40, 'Normal'], [12, 'Fast']].map(([ms, t]) => el('option', { value: ms, selected: ms === state.play.speed }, t)),
+        ),
+        el('button', { class: 'secondary', onclick: () => { state.play.i = state.result.series.length - 1; stopPlay(); updateFly(true); } }, 'Skip to end'),
+      ),
+    ),
+    el('div', { id: 'fly-chart' }),
+    el(
+      'div',
+      { class: 'flygrid' },
+      el('div', { class: 'gauges', id: 'gauges' }),
+      el('div', { class: 'side' }, el('h3', { text: 'Your rulebook' }), el('ol', { class: 'minirules', id: 'minirules' }, ...state.rules.map((r, i) => el('li', { 'data-rule': i }, el('span', { class: 'rnum', text: String(i + 1).padStart(2, '0') }), ruleText(r)))), state.rules.length ? null : el('p', { class: 'small', text: 'No rules: every system stays on.' }), el('h3', { text: 'Systems' }), el('div', { class: 'systems', id: 'systems' })),
+    ),
+    el('div', { class: 'logwrap' }, el('h3', { text: 'Mission log' }), el('ol', { class: 'log', id: 'log', 'aria-live': 'polite' })),
+    el('div', { class: 'next', id: 'fly-next', hidden: true }, el('button', { class: 'primary', onclick: () => go('debrief') }, 'Open the debrief')),
+  );
+}
+
+function gauge(label, value, unit, pct, status, note) {
+  return el(
+    'div',
+    { class: `gauge ${status}` },
+    el('span', { class: 'glabel', text: label }),
+    el('span', { class: 'gval' }, el('b', { text: value }), ' ', unit),
+    el('span', { class: 'gbar' }, el('span', { style: `width:${Math.max(0, Math.min(100, pct))}%` })),
+    el('span', { class: 'gnote', text: `${note} · ${status === 'crit' ? 'critical' : status === 'warn' ? 'watch' : 'ok'}` }),
+  );
+}
+
+function updateFly(done = false) {
+  const r = state.result;
+  const i = state.play.i;
+  const p = r.series[i];
+  if (!p) return;
+  $('#fly-day').textContent = `Mission day ${missionDay(p.h)} · ${p.sunElev > 0 ? 'Sun up' : 'Night'}${p.stormActive ? ' · Solar storm' : ''}`;
+  $('#fly-date').textContent = fmtDate(p.h);
+  $('#fly-chart').replaceChildren(missionChart({ result: r, prev: state.prev, playH: p.h }));
+  const lvl = (x, warn, crit) => (x <= crit ? 'crit' : x <= warn ? 'warn' : 'ok');
+  const budget = C.doseBudgetMSv.value;
+  $('#gauges').replaceChildren(
+    gauge('Battery', p.batteryPct.toFixed(0), '%', p.batteryPct, lvl(p.batteryPct, 30, 10), `${state.build.batteryKwh} kWh capacity`),
+    gauge('Power in / out', `${p.genKw.toFixed(1)} / ${p.loadKw.toFixed(1)}`, 'kW', (p.genKw / Math.max(p.loadKw, 0.1)) * 50, p.powered ? (p.genKw >= p.loadKw ? 'ok' : 'warn') : 'crit', p.powered ? 'solar vs. load' : 'BLACKOUT'),
+    gauge('Oxygen', p.o2Days.toFixed(1), 'days left', (p.o2Days / 30) * 100, lvl(p.o2Days, 5, 2), 'at current use'),
+    gauge('Water', p.waterDays.toFixed(1), 'days left', (p.waterDays / 30) * 100, lvl(p.waterDays, 5, 2), 'at current use'),
+    gauge('Food', p.foodDays.toFixed(1), 'days left', (p.foodDays / 30) * 100, lvl(p.foodDays, 5, 2), 'at current use'),
+    gauge('Crew dose', p.doseMSv.toFixed(1), 'mSv', (p.doseMSv / budget) * 100, p.doseMSv > budget ? 'crit' : p.doseMSv > budget * 0.8 ? 'warn' : 'ok', `budget ${budget} mSv`),
+    gauge('Morale', p.morale.toFixed(0), '/ 100', p.morale, lvl(p.morale, 35, 15), 'cold and cramps lower it'),
+  );
+  $('#systems').replaceChildren(
+    ...Object.entries(SYS_LABELS).map(([k, [name, fmt]]) => {
+      const val = p.systems[k];
+      const isDefault = { greenhouse: true, science: true, heat: 'normal', shelter: false, exercise: true, ration: false }[k] === val;
+      return el('div', { class: 'sys' + (isDefault ? '' : ' changed') }, el('span', { text: name }), el('b', { text: k === 'greenhouse' && state.build.greenhouseModules === 0 ? 'NONE' : fmt(val) }));
+    }),
+  );
+  // rule flashes this hour
+  const firedNow = new Set(r.events.filter((e) => e.kind === 'rule' && e.h === p.h).map((e) => e.ruleIndex));
+  document.querySelectorAll('#minirules li').forEach((li) => li.classList.toggle('fired', firedNow.has(Number(li.dataset.rule))));
+  // log
+  const shown = r.events.filter((e) => e.h <= p.h);
+  const log = $('#log');
+  if (log.childElementCount !== shown.length) {
+    log.replaceChildren(
+      ...shown.slice().reverse().map((e) =>
+        el(
+          'li',
+          { class: `ev ${e.kind}` },
+          el('time', { text: fmtDate(e.h) }),
+          el('span', { text: e.kind === 'rule' ? `Rule ${e.ruleIndex + 1}: ${ruleText(e.rule)}` : e.text }),
+          el('span', { class: 'src', text: { horizons: 'OBSERVED', donki: 'OBSERVED', sim: 'SIMULATED' }[e.source] || 'YOUR RULE' }),
+        ),
+      ),
+    );
+  }
+  const pp = $('#pp');
+  if (pp) pp.textContent = state.play.timer ? 'Pause' : 'Play';
+  if (done || i >= r.series.length - 1) {
+    $('#fly-next').hidden = false;
+    if (pp) pp.disabled = true;
+  }
+}
+
+// ---------------- debrief ----------------
+function screenDebrief() {
+  const r = state.result;
+  const d = firstDomino(r, REC);
+  const o = r.outcome;
+  const code = encodeShare(state.build, state.rules);
+  const survivedHours = o.atHour - REC.missionStartHour;
+  const ghostSleep = REC.ghost.find((g) => g.label === 'Vikram sleeps');
+  const stat = (label, value, sub) => el('div', { class: 'stat' }, el('span', { class: 'glabel', text: label }), el('b', { text: value }), el('span', { class: 'gnote', text: sub }));
+  return el(
+    'section',
+    { class: 'debrief' },
+    el(
+      'header',
+      { class: 'screenhead verdict ' + o.status },
+      el('p', { class: 'eyebrow', text: `Flight ${state.flights} debrief` }),
+      el('h2', { text: d.headline }),
+      el('p', { text: o.status === 'survived' ? `Your crew lasted all ${Math.round(survivedHours / 24)} days and saw the Sun come back.` : `${o.text} That was ${fmtDate(o.atHour)}, day ${missionDay(o.atHour)} of ${Math.round((REC.missionEndHour - REC.missionStartHour) / 24)}.` }),
+    ),
+    el(
+      'div',
+      { class: 'dominos' },
+      el('h3', { text: o.status === 'survived' ? 'How close it was' : 'What knocked it over' }),
+      el('ol', { class: 'chain' }, ...d.chain.map((c) => el('li', { text: c }))),
+    ),
+    missionChart({ result: r, prev: state.prev, playH: null }),
+    el(
+      'div',
+      { class: 'stats' },
+      stat('Science done', `${o.scienceHours} h`, 'instrument hours'),
+      stat('Crew dose', `${o.doseMSv.toFixed(1)} mSv`, o.overDoseBudget ? `over the ${C.doseBudgetMSv.value} mSv budget` : `within the ${C.doseBudgetMSv.value} mSv budget`),
+      stat('Lowest battery', `${o.minBatteryPct.toFixed(0)}%`, 'closest call'),
+      stat('Morale', `${o.morale.toFixed(0)} / 100`, 'at the end'),
+    ),
+    el(
+      'aside',
+      { class: 'ghostnote' },
+      el('h3', { text: 'What really happened here' }),
+      el('p', {}, `ISRO put Vikram to sleep on ${fmtDay(hourOf(REC, ghostSleep.timeUTC))}, about ${Math.round(nightLength(REC).sunsetHour - hourOf(REC, ghostSleep.timeUTC))} hours before local sunset. It was built for one lunar day. When ISRO tried to wake it on Sep 22, after the Sun returned, it did not answer. Your outpost had to stay awake and keep four people warm through the same night.`),
+    ),
+    el(
+      'div',
+      { class: 'share' },
+      el('h3', { text: 'Share this rulebook' }),
+      el('p', { class: 'small', text: 'Paste this code into another browser to fly the same build and rules. It holds no names or personal data.' }),
+      el('div', { class: 'coderow' }, el('input', { id: 'sharecode', readonly: true, value: code, 'aria-label': 'Share code' }), el('button', { class: 'secondary', onclick: copyCode }, 'Copy')),
+      el('div', { class: 'coderow' }, el('input', { id: 'loadcode', placeholder: 'Paste a classmate\'s code', 'aria-label': 'Load a share code' }), el('button', { class: 'secondary', onclick: loadCode }, 'Load')),
+      el('p', { class: 'small', id: 'codemsg', role: 'status' }),
+    ),
+    el('div', { class: 'next' }, el('button', { class: 'ghostbtn', onclick: () => go('build') }, 'Change the cargo'), el('button', { class: 'primary', onclick: () => go('rules') }, 'Edit rules and fly again')),
+  );
+}
+async function copyCode() {
+  const inp = $('#sharecode');
+  try {
+    await navigator.clipboard.writeText(inp.value);
+    $('#codemsg').textContent = 'Copied.';
+  } catch {
+    inp.select();
+    $('#codemsg').textContent = 'Select the code and copy it with your keyboard.';
+  }
+}
+function loadCode() {
+  const got = decodeShare($('#loadcode').value);
+  if (!got) {
+    $('#codemsg').textContent = 'That code is not valid. Check that you pasted all of it.';
+    return;
+  }
+  state.build = got.build;
+  state.rules = got.rules;
+  saveLocal();
+  $('#codemsg').textContent = 'Loaded. Open "Write rules" to see them, then fly.';
+}
+
+// ---------------- sources ----------------
+function screenSources() {
+  const rows = Object.entries(C).map(([k, c]) =>
+    el('tr', {}, el('td', { text: k }), el('td', { class: 'num', text: `${c.value} ${c.unit}` }), el('td', {}, el('span', { class: 'tag ' + c.label.replace(' ', '-').toLowerCase(), text: c.label })), el('td', {}, c.url ? el('a', { href: c.url, target: '_blank', rel: 'noopener' }, c.source) : c.source)),
+  );
+  return el(
+    'section',
+    { class: 'sources' },
+    el('header', { class: 'screenhead' }, el('h2', { text: 'Where every number comes from' }), el('p', { text: 'The environment is real. The outpost is a simplified model. Every number is labelled so you can tell which is which.' })),
+    el(
+      'div',
+      { class: 'legend' },
+      el('p', {}, el('span', { class: 'tag observed', text: 'OBSERVED' }), ' measured or computed by a space agency for the real dates and place'),
+      el('p', {}, el('span', { class: 'tag published', text: 'PUBLISHED' }), ' a value from a cited NASA standard or science paper'),
+      el('p', {}, el('span', { class: 'tag derived', text: 'DERIVED' }), ' worked out from published values or physics'),
+      el('p', {}, el('span', { class: 'tag game-estimate', text: 'GAME ESTIMATE' }), ' chosen to make the game playable; a sensible size, not a design value'),
+      el('p', {}, el('span', { class: 'tag simulated', text: 'SIMULATED' }), ' what the model computes from your build and rules'),
+    ),
+    el('h3', { text: 'Environment record: ' + REC.name }),
+    el('ul', { class: 'srclist' }, ...REC.meta.sources.map((s) => el('li', {}, el('span', { class: 'tag observed', text: s.label }), ' ', el('b', { text: `${s.agency}: ` }), el('a', { href: s.url, target: '_blank', rel: 'noopener' }, s.name), el('br'), el('span', { class: 'small', text: s.notes })))),
+    el('p', { class: 'small', text: `Retrieved ${REC.meta.retrievedUTC}. Sun and Earth elevations are 6-hourly Horizons values, interpolated to hours (max error 0.011°).` }),
+    el('h3', { text: 'Model constants' }),
+    el('div', { class: 'tablewrap' }, el('table', {}, el('thead', {}, el('tr', {}, el('th', { text: 'Name' }), el('th', { text: 'Value' }), el('th', { text: 'Label' }), el('th', { text: 'Source' }))), el('tbody', {}, ...rows))),
+    el('div', { class: 'next' }, el('button', { class: 'primary', onclick: () => go(state.result ? 'debrief' : 'intro') }, 'Back')),
+  );
+}
+
+// ---------------- render ----------------
+function render() {
+  renderNav();
+  const main = $('#main');
+  const screens = { intro: screenIntro, build: screenBuild, rules: screenRules, fly: screenFly, debrief: screenDebrief, sources: screenSources };
+  main.replaceChildren(screens[state.screen]());
+  if (state.screen === 'fly') updateFly();
+}
+
+loadLocal();
+$('#brand').addEventListener('click', () => go('intro'));
+$('#srcbtn').addEventListener('click', () => go('sources'));
+render();
+
+})();
+</script>
+</body>
+</html>
